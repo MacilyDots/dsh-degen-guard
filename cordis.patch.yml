@@ -1,0 +1,11 @@
+# dsh-degen-guard bundle patch: one insert row activating the plugin.
+#
+# 默认阈值写在 lib/detect.js 的 DEFAULT_CONFIG（maxLineRepeat: 100）。
+# 要改就在 profile 的 cordis.patch.yml 里按 id `degen-guard` 覆盖 config，例如：
+#   - id: degen-guard
+#     config:
+#       mode: log            # 只记录不干预
+#       maxLineRepeat: 100
+- insert:
+    - id: degen-guard
+      name: 'dsh-degen-guard'

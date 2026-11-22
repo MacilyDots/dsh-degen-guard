@@ -6,6 +6,9 @@
 #     config:
 #       mode: log            # 只记录不干预
 #       maxLineRepeat: 100
+#       onFused: hint        # 熔断后动作：hint | draft | auto（volatile，/degen-mode 可持久改）
+#       maxAutoChain: 1      # 每条继承链最多自动启动次数 1..3（volatile）
+#       autoNextStep: '上一会话因连续退化（重复无效输出或死循环）被熔断。请先只读检查交接单涉及的最近修改文件与当前工作区状态，确认停在哪里；严禁原样重试上次卡住或失败的操作，必须换一种实现路径或先缩小改动范围；若发现缺少关键上下文或环境阻塞无法绕过，立即停止并列出需要人工确认的问题。'
 - insert:
     - id: degen-guard
       name: 'dsh-degen-guard'

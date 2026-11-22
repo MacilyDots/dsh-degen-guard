@@ -19,7 +19,28 @@
 |---|---|---|
 | ① 重复度（主力） | 本步同一非空行重复 ≥ `maxLineRepeat`（默认 100），且该步尚无正文与工具调用 | 中止本步 |
 | ② 爬升期提前拦截 | 最近 8 步里有 ≥ 4 步的「最高频行」是**同一句含字碎念**、且这些步重复数 ≥ 8 | 本步阈值降到 `escalatedMaxLineRepeat`（默认 40） |
-| ③ 熔断 | 同一会话累计触发 ≥ `maxTripsPerSession`（默认 2） | 中止时**不再保留待处理工作**，切断「中止→唤醒→再退化」的闭环 |
+| ③ 熔断 | 同一会话累计触发 ≥ `maxTripsPerSession`（默认 2） | 中止时**不再保留待处理工作**，切断「中止→唤醒→再退化」的闭环；按 `onFused` 决定恢复方式 |
+
+### 熔断后的恢复（onFused）
+
+熔断时停止原因里始终带 `/inherit <会话 id>` 提示，用户可手动继承。此外按 `onFused`（默认 `hint`）自动处置：
+
+| 值 | 行为 |
+|---|---|
+| `hint` | 只给提示，不调用继承服务 |
+| `draft` | 通过 `sessionInherit` 服务静态创建一份继承草稿（新会话已建但不启动） |
+| `auto` | 自动启动继承会话：先用 `agent.whenIdle()` 确认原 agent 已静止（10 秒超时，超时降 `draft`），并在服务启动 child **之前**登记子会话深度；每条链最多自动启动 `maxAutoChain`（1..3，默认 1）次，达上限降 `draft` |
+
+`sessionInherit` 服务缺失、调用失败、深度登记失败时安全降为 `hint`/`draft`，绝不以固定延迟冒充停止确认。`mode: log` 下不触发任何恢复动作。深度登记在服务回调 `onChildCreated` 里同步完成（child 已建、尚未注入/启动），避免快速连续熔断时重复启动同一条链。
+
+三字段都是 **volatile**：改后即时生效、不必重启。用 `/degen-mode` 命令持久化：
+
+```
+/degen-mode          # 查看当前有效值
+/degen-mode hint     # 或 draft / auto
+```
+
+命令优先通过 `configEditor.edit` 写回 profile 配置并保留其他字段；写回失败时只在本进程内生效（stats 与返回文本都会如实说明）。旧配置字段保持原键原语义，兼容照旧。
 
 每次触发（无论第几次）都会在 `%DSH_HOME%\handoff\` 落盘一份**交接单**，含会话 id、工作区、触发状态、重复的那一行、触发时刻的请求摘要、以及从会话存档里抽出的最近用户消息 / 工具调用 / 最后一次 `todo/write`——方便开新会话续。交接单路径同时写进中止原因，界面上能看到。
 
@@ -109,6 +130,9 @@ node install.mjs web             # 或指定 profile 名 / 绝对路径
     trendMinRepeat: 8
     maxTripsPerSession: 2     # 第③层熔断阈值
     handoff: true             # 是否落盘交接单
+    onFused: hint             # 熔断后动作：hint | draft | auto（volatile）
+    maxAutoChain: 1           # 每条链最多自动启动次数 1..3（volatile）
+    autoNextStep: '上一会话因连续退化（重复无效输出或死循环）被熔断。请先只读检查交接单涉及的最近修改文件与当前工作区状态，确认停在哪里；严禁原样重试上次卡住或失败的操作，必须换一种实现路径或先缩小改动范围；若发现缺少关键上下文或环境阻塞无法绕过，立即停止并列出需要人工确认的问题。'
 ```
 
 想先观察一段时间再开杀，就把 `mode` 设成 `log`。
@@ -120,7 +144,7 @@ node install.mjs web             # 或指定 profile 名 / 绝对路径
 | 端点 | 作用 |
 |---|---|
 | `GET /dsh-degen-guard/log` | 最近日志 + 本进程统计 |
-| `GET /dsh-degen-guard/stats` | 触发计数、按类型分布、活跃 agent 数 |
+| `GET /dsh-degen-guard/stats` | 触发计数、按类型分布、活跃 agent 数、有效配置（`effectiveOnFused` / `effectiveMaxAutoChain` / `autoNextStep`） |
 | `POST /dsh-degen-guard/clear` | 清空日志 |
 
 日志文件：`%DSH_HOME%\logs\dsh-degen-guard.log`（**时间戳是 UTC**，本地时间要 +8）。
@@ -142,5 +166,6 @@ node tools/replay.mjs 999 --trend --config '{"escalatedMaxLineRepeat":60}'
 ```bash
 node test/test-detect.mjs      # 50 项判据单测（合成数据）
 node test/test-request-tap.mjs # 22 项请求探针单测
-node test/test-plugin.mjs      # 32 项宿主接线测试（mock ctx）
+node test/test-plugin.mjs      # 宿主接线测试（mock ctx）
+node test/test-recovery.mjs    # 熔断恢复编排：三态、深度、whenIdle 确认、命令持久化（mock）
 ```

@@ -1,8 +1,11 @@
 {
   "name": "dsh-degen-guard",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Reasoning-degeneration guard for DeepSeek Harness: detects token-level repetition loops in the model's reasoning channel (same line repeated hundreds of times, no prose, no tool call, stream never idles), escalates early during the climb-up phase, fuses after repeated trips per session, drops a handoff note, and records the request summary at trip time, all through the official hook cancel cause.",
   "type": "module",
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.19.0"
+  },
   "main": "./lib/index.js",
   "exports": {
     ".": "./lib/index.js",
@@ -26,7 +29,7 @@
   "license": "MIT",
   "author": "MacilyDots",
   "scripts": {
-    "test": "node test/test-detect.mjs && node test/test-request-tap.mjs && node test/test-plugin.mjs"
+    "test": "node test/test-detect.mjs && node test/test-request-tap.mjs && node test/test-plugin.mjs && node test/test-recovery.mjs"
   },
   "dsh": {
     "bundle": {

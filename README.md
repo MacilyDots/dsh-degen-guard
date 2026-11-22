@@ -107,6 +107,14 @@ reasoningChars ≥ 100000             →  runaway-reasoning（兜底，真实�
 
 ## 安装
 
+从 npm 安装：
+
+```bash
+dsh plugin add dsh-degen-guard
+```
+
+从仓库源码安装（`install.mjs` 只随 git 仓库提供，不在 npm 包内）：
+
 ```bash
 node install.mjs                 # 装进 %DSH_HOME%\profiles\desktop
 node install.mjs web             # 或指定 profile 名 / 绝对路径
@@ -152,6 +160,8 @@ node install.mjs web             # 或指定 profile 名 / 绝对路径
 触发时插件用官方 `agent.cancel({ kind: 'hook', reason })` 中止当前步——`hook` 是 `AgentCancelCause` 为插件预留的取消原因，所以会话记录里能看出是守卫干的，不是用户点的停止。
 
 ## 离线回放
+
+`tools/replay.mjs` 只随 git 仓库提供，不在 npm 包内。
 
 ```bash
 node tools/replay.mjs 999 --trend          # 全量会话，带跨步趋势

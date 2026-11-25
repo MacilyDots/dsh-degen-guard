@@ -32,7 +32,7 @@
   "license": "MIT",
   "author": "MacilyDots",
   "scripts": {
-    "test": "node test/test-detect.mjs && node test/test-request-tap.mjs && node test/test-plugin.mjs && node test/test-recovery.mjs"
+    "test": "node test/test-detect.mjs && node test/test-request-tap.mjs && node test/test-plugin.mjs && node test/test-recovery.mjs && node test/test-infra-fix-01.mjs"
   },
   "dsh": {
     "bundle": {
